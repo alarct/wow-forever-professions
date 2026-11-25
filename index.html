@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     :root {
+      color-scheme: dark;
       --background: #0b0f19;
       --card: #131926;
       --content: #1a2234;
@@ -26,6 +27,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     html.light {
+      color-scheme: light;
       --background: #f8fafc;
       --card: #ffffff;
       --content: #f1f5f9;
@@ -71,6 +73,44 @@
     html:not(.light) .silver-c { color: #cbd5e1; }
     html:not(.light) .copper-c { color: #fdba74; }
     .tabular { font-variant-numeric: tabular-nums; }
+    :root { color-scheme: dark; }
+    html.light { color-scheme: light; }
+    select {
+      color-scheme: dark;
+      background-color: var(--content, #1a2234);
+      color: var(--foreground, #f1f5f9);
+    }
+    html.light select {
+      color-scheme: light;
+      background-color: var(--content, #f1f5f9);
+      color: var(--foreground, #0f172a);
+    }
+    select option, select optgroup {
+      background-color: var(--card, #131926);
+      color: var(--foreground, #f1f5f9);
+    }
+    html.light select option, html.light select optgroup {
+      background-color: var(--card, #ffffff);
+      color: var(--foreground, #0f172a);
+    }
+    .sign-neg { color: var(--error, #ef4444); font-weight: 900; margin-right: 2px; font-size: 1.1em; }
+    .sign-pos { color: var(--success, #22c55e); font-weight: 800; margin-right: 2px; }
+    .money-loss {
+      display: inline-flex;
+      align-items: baseline;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+    }
+    .money-gain {
+      display: inline-flex;
+      align-items: baseline;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(34, 197, 94, 0.10);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     /* Authentic WoW In-Game Tooltip */
@@ -122,7 +162,7 @@
         <div class="flex flex-wrap items-center gap-2">
           <label class="flex items-center gap-1.5 text-xs bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1.5">
             <span class="text-[var(--muted-foreground)]">Servidor EU:</span>
-            <select id="sel-house" class="bg-transparent font-semibold text-[var(--foreground)] focus:outline-none cursor-pointer">
+            <select id="sel-house" class="bg-[var(--content)] font-semibold text-[var(--foreground)] focus:outline-none cursor-pointer">
               <option value="22">EU Normal · Horda (#114)</option>
               <option value="18">EU PvP · Alianza (#110)</option>
               <option value="19">EU Normal · Alianza (#111)</option>
@@ -132,7 +172,7 @@
 
           <label class="flex items-center gap-1.5 text-xs bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1.5">
             <span class="text-[var(--muted-foreground)]">Precio AH:</span>
-            <select id="sel-metric" class="bg-transparent font-semibold text-[var(--foreground)] focus:outline-none cursor-pointer">
+            <select id="sel-metric" class="bg-[var(--content)] font-semibold text-[var(--foreground)] focus:outline-none cursor-pointer">
               <option value="0">Mínimo (Buyout)</option>
               <option value="1">Percentil 10 (P10)</option>
               <option value="2">Mediana</option>
@@ -192,15 +232,16 @@
           <div class="flex flex-wrap items-center gap-2 text-xs">
             <label class="flex items-center gap-1.5 bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1">
               <span class="text-[var(--muted-foreground)]">Modo:</span>
-              <select id="r-algo" class="bg-transparent text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
-                <option value="dp">Óptimo total (con coste de receta)</option>
+              <select id="r-algo" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
+                <option value="dp">Óptimo neto (con coste de receta)</option>
+                <option value="min_invest">Menor inversión necesitada (capital inicial)</option>
                 <option value="marginal">Puramente marginal (punto a punto)</option>
               </select>
             </label>
 
             <label class="flex items-center gap-1.5 bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1">
               <span class="text-[var(--muted-foreground)]">Salida:</span>
-              <select id="r-sell" class="bg-transparent text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
+              <select id="r-sell" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
                 <option value="ah">Vender en AH (-5%) o Vendor</option>
                 <option value="vendor">Solo Vendor NPC</option>
                 <option value="none">No vender (coste bruto)</option>
@@ -209,7 +250,7 @@
 
             <label class="flex items-center gap-1.5 bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1">
               <span class="text-[var(--muted-foreground)]">Prob. mín:</span>
-              <select id="r-minprob" class="bg-transparent text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
+              <select id="r-minprob" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
                 <option value="0.01">Cualquiera (&gt;0%)</option>
                 <option value="0.25">≥ 25%</option>
                 <option value="0.50">≥ 50% (Amarillo+)</option>
@@ -226,7 +267,7 @@
             <div class="flex flex-wrap items-center gap-2">
               <label class="flex items-center gap-1.5 bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1">
                 <span class="text-[var(--muted-foreground)]">Coste máx. receta AH:</span>
-                <select id="r-max-rec-cost" class="bg-transparent text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
+                <select id="r-max-rec-cost" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
                   <option value="0">Sin límite</option>
                   <option value="5000">≤ 50s</option>
                   <option value="20000">≤ 2g</option>
@@ -245,7 +286,7 @@
           <span class="font-semibold text-[var(--foreground)]">Liquidez y anti-inundación AH:</span>
           <label class="flex items-center gap-1.5 bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1" title="Si el ítem crafteado vende menos de esta cantidad al día en tu servidor, se valora a precio de Vendor NPC para evitar contar ventas irreales.">
             <span class="text-[var(--muted-foreground)]">Ventas mín./día para AH:</span>
-            <select id="r-min-sold" class="bg-transparent text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
+            <select id="r-min-sold" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
               <option value="0">Sin mínimo</option>
               <option value="1">≥ 1/día</option>
               <option value="2" selected>≥ 2/día</option>
@@ -256,7 +297,7 @@
 
           <label class="flex items-center gap-1.5 bg-[var(--content)] border border-[var(--border)] rounded-lg px-2.5 py-1" title="Limita cuántas unidades del mismo objeto valora el optimizador a precio de Subasta; el excedente se valora a precio Vendor NPC para diversificar crafteos y no inundar el mercado.">
             <span class="text-[var(--muted-foreground)]">Tope mercado/ítem:</span>
-            <select id="r-market-cap" class="bg-transparent text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
+            <select id="r-market-cap" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
               <option value="0">Sin tope</option>
               <option value="1">≤ 1 día de ventas</option>
               <option value="2" selected>≤ 2 días de ventas</option>
@@ -277,7 +318,7 @@
       </div>
 
       <!-- KPIs -->
-      <div id="route-kpis" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5"></div>
+      <div id="route-kpis" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5"></div>
 
       <!-- Route Main Grid -->
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
@@ -308,7 +349,7 @@
                     <th class="py-2 px-3">Receta Óptima</th>
                     <th class="py-2 px-3">Prob. %</th>
                     <th class="py-2 px-3 text-right">Crafteos esp.</th>
-                    <th class="py-2 px-3 text-right">Coste marginal</th>
+                    <th class="py-2 px-3 text-right">Balance / pto</th>
                     <th class="py-2 px-3">Alternativas en este punto</th>
                   </tr>
                 </thead>
@@ -657,7 +698,11 @@
     function fmtMoney(copper, forceSign = false) {
       if (copper == null || Number.isNaN(copper)) return '<span class="text-[var(--muted-foreground)]">—</span>';
       const n = Math.round(copper);
-      const sign = n < 0 ? "-" : (forceSign && n > 0 ? "+" : "");
+      const isNeg = n < 0;
+      const isPos = forceSign && n > 0;
+      const signHtml = isNeg
+        ? '<span class="sign-neg" aria-label="menos">-</span>'
+        : (isPos ? '<span class="sign-pos" aria-label="más">+</span>' : '');
       const abs = Math.abs(n);
       const g = Math.floor(abs / 10000);
       const s = Math.floor((abs % 10000) / 100);
@@ -666,7 +711,8 @@
       if (g > 0) parts.push(`<span class="gold-c">${g.toLocaleString()}g</span>`);
       if (s > 0 || g > 0) parts.push(`<span class="silver-c">${s}s</span>`);
       parts.push(`<span class="copper-c">${c}c</span>`);
-      return `<span class="font-mono tabular whitespace-nowrap">${sign}${parts.join(" ")}</span>`;
+      const wrapCls = forceSign ? (isNeg ? ' money-loss' : (isPos ? ' money-gain' : '')) : '';
+      return `<span class="font-mono tabular whitespace-nowrap${wrapCls}">${signHtml}${parts.join(" ")}</span>`;
     }
 
     function fmtMoneyPlain(copper) {
@@ -943,6 +989,7 @@
       const cfg = state.route;
       const start = Math.max(1, Math.min(299, Number(cfg.from) || 1));
       const end = Math.max(start + 1, Math.min(300, Number(cfg.to) || 300));
+      const isMinInvest = cfg.algo === "min_invest";
       const userFaction = HOUSE_LABELS[state.house]?.faction || null;
 
       const candidates = [];
@@ -1029,9 +1076,10 @@
             const grossMat = ev.matCost * expCrafts;
             const revObj = pointRevenue(ev, expCrafts, ahUsedQty);
             const marginalCost = grossMat - revObj.rev;
-            ranked.push({ ev, p, expCrafts, grossMat, revObj, marginalCost });
+            const rankMetric = isMinInvest ? grossMat : marginalCost;
+            ranked.push({ ev, p, expCrafts, grossMat, revObj, marginalCost, rankMetric });
           }
-          ranked.sort((a, b) => a.marginalCost - b.marginalCost);
+          ranked.sort((a, b) => (a.rankMetric - b.rankMetric) || (a.marginalCost - b.marginalCost) || (a.grossMat - b.grossMat));
           if (ranked.length === 0) {
             return { feasible: false, failedAt: x, points };
           }
@@ -1063,9 +1111,24 @@
           totalRev,
           totalNetCraft,
           learnCost,
+          totalInvest: totalGrossMat + learnCost,
           totalCost: totalNetCraft + learnCost,
         };
       }
+
+      const solObjective = (s) => isMinInvest ? s.totalInvest : s.totalCost;
+      const isStrictlyBetter = (cand, cur) => {
+        const oc = solObjective(cand), ob = solObjective(cur);
+        if (oc < ob - 1) return true;
+        if (Math.abs(oc - ob) <= 1 && cand.totalCost < cur.totalCost - 1) return true;
+        return false;
+      };
+      const isBetterOrEqual = (cand, cur) => {
+        const oc = solObjective(cand), ob = solObjective(cur);
+        if (oc < ob - 1) return true;
+        if (Math.abs(oc - ob) <= 1 && cand.totalCost <= cur.totalCost) return true;
+        return false;
+      };
 
       let sol = null;
       if (cfg.algo === "marginal") {
@@ -1087,7 +1150,7 @@
                 const trial = new Set(activeSet);
                 trial.delete(s);
                 const tSol = solveWithAllowed(trial);
-                if (tSol.feasible && tSol.totalCost <= bestSol.totalCost) {
+                if (tSol.feasible && isBetterOrEqual(tSol, bestSol)) {
                   activeSet = trial;
                   bestSol = tSol;
                   changed = true;
@@ -1096,17 +1159,20 @@
             }
           }
         } else {
-          // Pre-filter paid candidates that can actually beat current marginal cost in >=1 point
+          // Pre-filter paid candidates that can actually beat current metric in >=1 point
           const worthwhilePaid = candidates.filter(ev => {
             if (ev.effectiveLearnCost <= 0) return false;
             const bestUnitRev = Math.max(ev.unitAhNet || 0, ev.unitVendorSell || 0) * (ev.r.make?.[1] || 1);
-            const minPossibleCraftCost = ev.matCost - (cfg.sellMode === "none" ? 0 : bestUnitRev);
+            const minPossibleCraftCost = isMinInvest
+              ? ev.matCost
+              : (ev.matCost - (cfg.sellMode === "none" ? 0 : bestUnitRev));
             let maxSavings = 0;
             for (let x = start; x < end; x++) {
               const p = skillProb(ev.r, x);
               if (p < cfg.minProb || p <= 0) continue;
               const mc = minPossibleCraftCost / p;
-              const curMc = bestSol.points[x - start].best.marginalCost;
+              const curPt = bestSol.points[x - start].best;
+              const curMc = isMinInvest ? curPt.grossMat : curPt.marginalCost;
               if (mc < curMc) maxSavings += (curMc - mc);
             }
             return maxSavings > ev.effectiveLearnCost;
@@ -1124,7 +1190,7 @@
               const trial = new Set(activeSet);
               trial.add(ev.r.s);
               const tSol = solveWithAllowed(trial);
-              if (tSol.feasible && tSol.totalCost < bestTrialSol.totalCost - 1) {
+              if (tSol.feasible && isStrictlyBetter(tSol, bestTrialSol)) {
                 bestTrialSol = tSol;
                 bestTrialSet = trial;
               }
@@ -1143,7 +1209,7 @@
               const trial = new Set(activeSet);
               trial.delete(s);
               const tSol = solveWithAllowed(trial);
-              if (tSol.feasible && tSol.totalCost <= bestSol.totalCost) {
+              if (tSol.feasible && isBetterOrEqual(tSol, bestSol)) {
                 activeSet = trial;
                 bestSol = tSol;
                 pruned = true;
@@ -1231,6 +1297,7 @@
         totalRev: sol.totalRev,
         totalNetCraft: sol.totalNetCraft,
         learnCost: sol.learnCost,
+        totalInvest: sol.totalInvest,
         totalCost: sol.totalCost,
         distinctRecipes: learnList.length,
       };
@@ -1366,14 +1433,22 @@
         return;
       }
 
-      const netLabel = res.totalCost < 0 ? "Beneficio Neto Estimado" : "Coste Neto Total";
-      const netColor = res.totalCost < 0 ? "text-[var(--success)]" : "text-[var(--foreground)]";
+      const netBalance = -res.totalCost;
+      const netLabel = netBalance > 0 ? "Beneficio Neto" : (netBalance < 0 ? "Pérdida Neta Total" : "Balance Neto");
+      const netColor = netBalance > 0 ? "text-[var(--success)]" : (netBalance < 0 ? "text-[var(--error)]" : "text-[var(--foreground)]");
+      const invHighlight = state.route.algo === "min_invest" ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)]";
+      const netHighlight = state.route.algo === "dp" ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)]";
 
       $("route-kpis").innerHTML = `
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
+        <div class="bg-[var(--card)] border ${invHighlight} rounded-xl p-3">
+          <div class="text-xs text-[var(--muted-foreground)]">Inversión Necesitada</div>
+          <div class="text-base font-bold mt-0.5">${fmtMoney(res.totalInvest)}</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Mats + Recetas (capital inicial)</div>
+        </div>
+        <div class="bg-[var(--card)] border ${netHighlight} rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">${netLabel}</div>
-          <div class="text-base font-bold mt-0.5 ${netColor}">${res.totalCost < 0 ? fmtMoney(-res.totalCost, true) : fmtMoney(res.totalCost)}</div>
-          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Mats + Recetas − Ventas</div>
+          <div class="text-base font-bold mt-0.5 ${netColor}">${fmtMoney(netBalance, true)}</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Ventas − (Mats + Recetas)</div>
         </div>
         <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">Coste Bruto Materiales</div>
@@ -1383,7 +1458,7 @@
         <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">Coste Recetas / Trainer</div>
           <div class="text-base font-bold mt-0.5">${fmtMoney(res.learnCost)}</div>
-          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">${res.distinctRecipes} recetas (${state.route.algo === 'dp' ? 'incluido en DP' : 'informativo'})</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">${res.distinctRecipes} recetas (${state.route.algo === 'marginal' ? 'informativo' : 'incluido en ruta'})</div>
         </div>
         <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">Retorno por Ventas</div>
@@ -1456,9 +1531,12 @@
                   <div class="font-bold font-mono tabular">×${st.crafts.toFixed(1)} <span class="text-[var(--muted-foreground)] font-normal">crafteos</span></div>
                   <div class="text-xs">
                     ${st.netCraft < 0
-                      ? `<span class="text-[var(--success)] font-semibold">Ganas ${fmtMoney(-st.netCraft)}</span>`
-                      : `<span>Neto: ${fmtMoney(st.netCraft)}</span>`}
+                      ? `<span class="text-[var(--success)] font-semibold">Ganas ${fmtMoney(-st.netCraft, true)}</span>`
+                      : (st.netCraft > 0
+                        ? `<span class="text-[var(--error)] font-semibold">Pierdes ${fmtMoney(-st.netCraft, true)}</span>`
+                        : `<span class="text-[var(--muted-foreground)]">Equilibrio ${fmtMoney(0)}</span>`)}
                   </div>
+                  ${state.route.algo === "min_invest" ? `<div class="text-xs text-[var(--muted-foreground)] mt-0.5">Inversión mats: ${fmtMoney(st.grossMat)}</div>` : ''}
                 </div>
                 <div class="flex items-center gap-1">
                   <button data-known="${r.s}" title="Marcar como ya aprendida (coste aprendizaje = 0)" class="text-xs px-2 py-1 rounded border cursor-pointer ${state.knownRecipes.has(r.s) ? 'bg-[var(--success)]/15 border-[var(--success)] text-[var(--success)]' : 'bg-[var(--content)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'}">✓ Sé</button>
@@ -1519,10 +1597,10 @@
               </td>
               <td class="py-1.5 px-3"><span class="px-1.5 py-0.5 rounded badge-${col} font-mono tabular">${(b.p * 100).toFixed(1)}%</span></td>
               <td class="py-1.5 px-3 text-right font-mono tabular">${b.expCrafts.toFixed(2)}</td>
-              <td class="py-1.5 px-3 text-right">${fmtMoney(b.marginalCost)}</td>
+              <td class="py-1.5 px-3 text-right">${fmtMoney(-b.marginalCost, true)}</td>
               <td class="py-1.5 px-3 text-[var(--muted-foreground)]">
                 ${pt.alts.length ? pt.alts.map(a => {
-                  const diff = a.marginalCost - b.marginalCost;
+                  const diff = a.rankMetric - b.rankMetric;
                   return `<span class="inline-block mr-2">${esc(a.ev.r.n)} (${(a.p*100).toFixed(0)}%, +${fmtMoneyPlain(diff)})</span>`;
                 }).join("· ") : '—'}
               </td>
@@ -1595,7 +1673,7 @@
         return `
           <div class="flex items-center justify-between gap-2 py-0.5 text-xs">
             <span class="font-mono tabular">Skill ${pt.x}→${pt.x+1}: <b class="diff-${col}">${(pt.best.p*100).toFixed(1)}%</b> (${pt.best.expCrafts.toFixed(2)} cr.)</span>
-            <span class="text-[var(--muted-foreground)]">${alt ? `Alt: ${esc(alt.ev.r.n)} (+${fmtMoneyPlain(alt.marginalCost - pt.best.marginalCost)})` : 'Sin alternativa'}</span>
+            <span class="text-[var(--muted-foreground)]">${alt ? `Alt: ${esc(alt.ev.r.n)} (+${fmtMoneyPlain(alt.rankMetric - pt.best.rankMetric)})` : 'Sin alternativa'}</span>
           </div>
         `;
       }).join("");
@@ -1778,12 +1856,12 @@
               <div class="text-[var(--muted-foreground)]">${ev.revSource === 'ah' ? 'AH' : ev.revSource === 'vendor' ? 'Vendor' : ev.revSource === 'enchant' ? 'Servicio' : '—'}</div>
             </td>
             <td class="py-2 px-3 text-right font-bold ${profColor}">${fmtMoney(ev.profit, true)}</td>
-            <td class="py-2 px-3 text-right font-mono tabular ${profColor}">${ev.roi !== null ? `${ev.roi >= 0 ? '+' : ''}${ev.roi.toFixed(0)}%` : '—'}</td>
+            <td class="py-2 px-3 text-right font-mono tabular font-semibold ${profColor}">${ev.roi !== null ? `${ev.roi >= 0 ? '+' : '-'}${Math.abs(ev.roi).toFixed(0)}%` : '—'}</td>
             <td class="py-2 px-3 text-right font-mono tabular">
               <div>${ev.soldPerDay > 0 ? `${ev.soldPerDay.toFixed(1)}/d` : '0/d'}</div>
               <div class="text-[var(--muted-foreground)]">${r.make ? `stock ${ev.outStock}${supplyDays !== null ? ` (${supplyDays.toFixed(1)}d)` : ''}` : '—'}</div>
             </td>
-            <td class="py-2 px-3 text-right font-semibold ${ev.dailyProfit > 0 ? 'text-[var(--success)]' : ''}">${ev.dailyProfit > 0 ? fmtMoney(ev.dailyProfit, true) : '—'}</td>
+            <td class="py-2 px-3 text-right font-semibold ${ev.dailyProfit > 0 ? 'text-[var(--success)]' : (ev.dailyProfit < 0 ? 'text-[var(--error)]' : '')}">${ev.dailyProfit !== 0 ? fmtMoney(ev.dailyProfit, true) : '—'}</td>
           </tr>
         `;
       }).join("") : `<tr><td colspan="9" class="p-6 text-center text-[var(--muted-foreground)]">No hay recetas que coincidan con estos filtros.</td></tr>`;
@@ -2225,8 +2303,8 @@
                 <div class="text-sm font-bold mt-0.5">${ev.completeOut ? fmtMoney(ev.rev) : '—'}</div>
               </div>
               <div class="bg-[var(--content)] border border-[var(--border)] rounded-lg p-2.5">
-                <div class="text-[var(--muted-foreground)]">Beneficio / Crafteo</div>
-                <div class="text-sm font-bold mt-0.5 ${ev.profit >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}">${fmtMoney(ev.profit, true)}</div>
+                <div class="text-[var(--muted-foreground)]">${ev.profit !== null && ev.profit < 0 ? 'Pérdida / Crafteo' : 'Beneficio / Crafteo'}</div>
+                <div class="text-sm font-bold mt-0.5 ${ev.profit !== null ? (ev.profit >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]') : ''}">${fmtMoney(ev.profit, true)}</div>
               </div>
               <div class="bg-[var(--content)] border border-[var(--border)] rounded-lg p-2.5">
                 <div class="text-[var(--muted-foreground)]">Liquidez AH</div>
@@ -2300,7 +2378,7 @@
         });
         $("modal-batch-summary").innerHTML = `
           <span>Total ×${q}: Coste ${fmtMoney(ev.matCost !== null ? ev.matCost * q : null)}<span class="font-normal text-[var(--muted-foreground)]">${marketImpact}</span></span>
-          <span class="${ev.profit >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}">Beneficio: ${fmtMoney(ev.profit !== null ? ev.profit * q : null, true)}</span>
+          <span class="${ev.profit !== null ? (ev.profit >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]') : ''}">${ev.profit !== null && ev.profit < 0 ? 'Pérdida:' : 'Beneficio:'} ${fmtMoney(ev.profit !== null ? ev.profit * q : null, true)}</span>
         `;
       };
       renderBatch();
