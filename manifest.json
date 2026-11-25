@@ -1,0 +1,15 @@
+{
+  "name": "WoW Forever Profesiones (1-150)",
+  "short_name": "WoW Forever",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "icons": [
+    {
+      "src": "./icon.webp",
+      "sizes": "56x56",
+      "type": "image/webp"
+    }
+  ]
+}
