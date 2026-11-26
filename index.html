@@ -191,7 +191,7 @@
         <nav class="flex flex-wrap gap-1.5" role="tablist">
           <button data-tab="route" class="tab-btn text-xs font-semibold px-3 py-1.5 rounded-lg border transition cursor-pointer">1. Ruta Óptima (1–300)</button>
           <button data-tab="profit" class="tab-btn text-xs font-semibold px-3 py-1.5 rounded-lg border transition cursor-pointer">2. Rentabilidad y Crafteos</button>
-          <button data-tab="prices" class="tab-btn text-xs font-semibold px-3 py-1.5 rounded-lg border transition cursor-pointer">3. Materiales y Precios</button>
+          <button data-tab="prices" class="tab-btn text-xs font-semibold px-3 py-1.5 rounded-lg border transition cursor-pointer">3. Mercado y Precios</button>
         </nav>
 
         <div class="flex flex-wrap items-center gap-3 text-xs text-[var(--muted-foreground)]">
@@ -495,47 +495,108 @@
       </div>
     </section>
 
-    <!-- TAB 3: MATERIALS & PRICE EDITOR -->
+    <!-- TAB 3: MARKET SCREENER, TRENDS & PRICE EDITOR -->
     <section id="view-prices" class="hidden space-y-4">
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <input id="m-search" type="search" placeholder="Buscar material, ítem o patrón..." class="w-64 px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]" />
-          <select id="m-filter" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)]">
-            <option value="all">Todos los ítems</option>
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 sm:p-4 space-y-3">
+        <!-- Row 1: Stock-screener quick presets -->
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+          <span class="font-semibold text-[var(--foreground)] mr-1">Estrategias:</span>
+          <button data-mpreset="all" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">Todos</button>
+          <button data-mpreset="bullish" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">📈 Tendencia alcista</button>
+          <button data-mpreset="momentum" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">🚀 Momentum 24h</button>
+          <button data-mpreset="dip" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">💎 Compra en caída (Dip)</button>
+          <button data-mpreset="flip" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">🔥 Rebote / Flip</button>
+          <button data-mpreset="overbought" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">⚠️ Picos (Vender)</button>
+          <button data-mpreset="bearish" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">📉 Bajistas</button>
+          <button data-mpreset="watchlist" id="m-watchlist-preset" class="m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">⭐ Seguimiento (0)</button>
+        </div>
+
+        <!-- Row 2: Search & granular filters -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 text-xs">
+          <input id="m-search" type="search" placeholder="Buscar material, ítem o patrón..." class="lg:col-span-2 px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]" />
+
+          <select id="m-filter" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)] cursor-pointer">
+            <option value="all">Tipo: Todos</option>
             <option value="reagent">Solo Materiales</option>
             <option value="crafted">Solo Crafteados</option>
             <option value="recipe">Solo Recetas / Patrones</option>
             <option value="vendor">Vendidos por NPC</option>
             <option value="edited">Editados manualmente</option>
           </select>
+
+          <select id="m-signal" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)] cursor-pointer">
+            <option value="">Señal: Todas</option>
+            <option value="bullish">Alcista</option>
+            <option value="momentum">Momentum 24h</option>
+            <option value="dip">Rebote / Dip</option>
+            <option value="overbought">Pico (Vender)</option>
+            <option value="bearish">Bajista</option>
+            <option value="stable">Neutral</option>
+          </select>
+
+          <select id="m-min-sold" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)] cursor-pointer">
+            <option value="0">Ventas/día: Todas</option>
+            <option value="5">Ventas ≥ 5/día</option>
+            <option value="20">Ventas ≥ 20/día</option>
+            <option value="100">Ventas ≥ 100/día</option>
+            <option value="500">Ventas ≥ 500/día</option>
+          </select>
+
+          <select id="m-min-price" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] text-[var(--foreground)] cursor-pointer">
+            <option value="0">Precio mín.: Todos</option>
+            <option value="100">≥ 1s</option>
+            <option value="1000">≥ 10s</option>
+            <option value="10000">≥ 1g</option>
+            <option value="50000">≥ 5g</option>
+          </select>
         </div>
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <button id="m-clear-edits" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] hover:border-[var(--error)] cursor-pointer">Limpiar ediciones manuales</button>
-          <button id="m-export" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer">Exportar precios JSON</button>
-          <label class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer">
-            Importar JSON
-            <input id="m-import" type="file" accept=".json" class="hidden" />
-          </label>
+
+        <!-- Row 3: Toggles + Edit/JSON Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border)] text-xs">
+          <div class="flex flex-wrap items-center gap-4">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input id="m-only-active" type="checkbox" checked class="accent-[var(--primary)]" />
+              <span>Solo con subastas activas</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer" title="Filtra objetos con mediana extrema frente al P10 o ruido de lanzamiento que distorsiona los porcentajes.">
+              <input id="m-hide-skewed" type="checkbox" checked class="accent-[var(--primary)]" />
+              <span>Ocultar libros manipulados/irregulares</span>
+            </label>
+            <span id="m-count" class="text-[var(--muted-foreground)] font-medium"></span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="m-clear-edits" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] hover:border-[var(--error)] cursor-pointer">Limpiar ediciones manuales</button>
+            <button id="m-export" class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer">Exportar precios JSON</button>
+            <label class="px-2.5 py-1.5 rounded-lg bg-[var(--content)] border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer">
+              Importar JSON
+              <input id="m-import" type="file" accept=".json" class="hidden" />
+            </label>
+          </div>
         </div>
       </div>
+
+      <!-- Market Pulse KPIs -->
+      <div id="prices-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-2.5"></div>
 
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
         <div class="overflow-x-auto max-h-[650px]">
           <table class="w-full text-xs border-collapse">
             <thead class="bg-[var(--content)] sticky top-0 z-10 text-left text-[var(--muted-foreground)] border-b border-[var(--border)]">
               <tr>
-                <th class="py-2.5 px-3">Ítem</th>
-                <th class="py-2.5 px-3">Tipo</th>
-                <th class="py-2.5 px-3 text-right">Vendor (Compra / Venta)</th>
-                <th class="py-2.5 px-3 text-right">AH Mínimo</th>
-                <th class="py-2.5 px-3 text-right">AH P10</th>
-                <th class="py-2.5 px-3 text-right">Stock AH</th>
-                <th class="py-2.5 px-3 text-right">Precio personalizado (cobres)</th>
+                <th data-msort="name" class="m-sort py-2.5 px-3 cursor-pointer hover:text-[var(--foreground)]">Ítem</th>
+                <th data-msort="price" class="m-sort py-2.5 px-3 text-right cursor-pointer hover:text-[var(--foreground)]">Precio AH</th>
+                <th data-msort="vsHist" class="m-sort py-2.5 px-3 text-right cursor-pointer hover:text-[var(--foreground)]">Histórico / Desvío</th>
+                <th data-msort="chg24" class="m-sort py-2.5 px-3 text-right cursor-pointer hover:text-[var(--foreground)]">Cambio 24h</th>
+                <th data-msort="trend" class="m-sort py-2.5 px-3 text-right cursor-pointer hover:text-[var(--foreground)]">Tendencia</th>
+                <th data-msort="score" class="m-sort py-2.5 px-3 text-right cursor-pointer hover:text-[var(--foreground)]">Señal / Score</th>
+                <th data-msort="goldVol" class="m-sort py-2.5 px-3 text-right cursor-pointer hover:text-[var(--foreground)]">Liquidez · Vol. Oro/d</th>
+                <th class="py-2.5 px-3 text-right">Gráfica / Manual (cobres)</th>
               </tr>
             </thead>
             <tbody id="prices-tbody" class="divide-y divide-[var(--border)]"></tbody>
           </table>
         </div>
+        <div id="prices-pagination" class="px-4 py-2.5 border-t border-[var(--border)] flex items-center justify-between text-xs"></div>
       </div>
     </section>
 
@@ -664,11 +725,22 @@
       prices: {
         q: "",
         filter: "all",
+        preset: "all",
+        signal: "",
+        minSold: 0,
+        minPrice: 0,
+        onlyActive: true,
+        hideSkewed: true,
+        sort: "score",
+        order: "desc",
+        page: 1,
+        pageSize: 50,
       },
       liveMarket: persisted.liveMarket || {},
       manualPrices: persisted.manualPrices || {},
       knownRecipes: new Set(persisted.knownRecipes || []),
       excludedRecipes: new Set(persisted.excludedRecipes || []),
+      watchlist: new Set(persisted.watchlist || []),
       expandedSteps: new Set(),
       lastRouteResult: null,
     };
@@ -682,6 +754,7 @@
           manualPrices: state.manualPrices,
           knownRecipes: [...state.knownRecipes],
           excludedRecipes: [...state.excludedRecipes],
+          watchlist: [...state.watchlist],
         }));
       } catch {}
     }
@@ -782,12 +855,15 @@
       return { price: null, source: "missing" };
     }
 
-    function getSoldPerDay(r, hk = state.house) {
-      const outId = r.make?.[0];
-      if (!outId) return 0;
-      const live = state.liveMarket[hk]?.soldByItem?.[String(outId)];
+    function getItemSoldPerDay(id, hk = state.house) {
+      if (!id) return 0;
+      const live = state.liveMarket[hk]?.soldByItem?.[String(id)];
       if (live !== undefined) return live;
-      return DATA.soldByItem?.[String(outId)]?.[hk] ?? 0;
+      return DATA.soldByItem?.[String(id)]?.[hk] ?? 0;
+    }
+
+    function getSoldPerDay(r, hk = state.house) {
+      return getItemSoldPerDay(r.make?.[0], hk);
     }
 
     function getRecipeLearnInfo(r) {
@@ -1897,79 +1973,301 @@
     }
 
     // =========================================================================
-    // TAB 3: MATERIALS & PRICE EDITOR
+    // TAB 3: MARKET SCREENER, TREND ANALYZER & PRICE EDITOR ("ESTILO ACCIONES")
     // =========================================================================
-    function renderPrices() {
-      const qLower = state.prices.q.trim().toLowerCase();
-      const flt = state.prices.filter;
-      const manuals = state.manualPrices[state.house] || {};
+    const SIGNAL_BADGES = {
+      bullish:    { label: "📈 Alcista",        cls: "badge-green" },
+      momentum:   { label: "🚀 Momentum",       cls: "badge-green" },
+      dip:        { label: "💎 Rebote / Dip",   cls: "badge-yellow" },
+      overbought: { label: "⚠️ Pico / Vender",  cls: "badge-orange" },
+      bearish:    { label: "📉 Bajista",        cls: "badge-grey" },
+      stable:     { label: "Neutral",           cls: "badge-grey" },
+      none:       { label: "Sin AH",            cls: "badge-grey" },
+    };
 
-      let items = Object.keys(DATA.items).map(k => {
-        const id = Number(k);
-        const info = getItemInfo(id);
-        const m = getMarketEntry(id);
-        const manual = manuals[String(id)];
-        const roles = [];
-        if (REAGENT_IDS.has(id)) roles.push("Material");
-        if (CRAFTED_IDS.has(id)) roles.push("Crafteado");
-        if (RECIPE_ITEM_IDS.has(id)) roles.push("Receta");
-        return { id, info, m, manual, roles };
+    function analyzeMarketItem(id) {
+      const info = getItemInfo(id);
+      const m = getMarketEntry(id);
+      const evo = getPriceEvolutionMeta(id);
+      const sold = getItemSoldPerDay(id);
+      const manual = state.manualPrices[state.house]?.[String(id)];
+      const roles = [];
+      if (REAGENT_IDS.has(id)) roles.push("Mat");
+      if (CRAFTED_IDS.has(id)) roles.push("Craft");
+      if (RECIPE_ITEM_IDS.has(id)) roles.push("Receta");
+      if (info.vendorSold) roles.push("NPC");
+
+      const curPrice = evo.curPrice ?? evo.min;
+      const histVal = evo.histVal;
+      const trend = evo.trendPct;
+      const chg24 = evo.minChg24;
+      const medChg24 = evo.medChg24;
+      const daysSeen = evo.daysSeen || 0;
+      const qty = evo.qty || 0;
+      const vsHistPct = evo.vsHistPct;
+      const dailyGold = (curPrice > 0 && sold > 0) ? curPrice * sold : 0;
+      const supplyDays = (sold > 0 && qty > 0) ? (qty / sold) : null;
+
+      const isSkewed = Boolean(
+        (evo.p10 > 0 && evo.med != null && evo.med > evo.p10 * 3.5) ||
+        (evo.p10 > 0 && histVal > evo.p10 * 4.5 && sold > 0) ||
+        (trend != null && trend > 400)
+      );
+
+      const targetSell = (histVal > 0 && evo.med > 0) ? Math.min(histVal, evo.med) : (histVal || evo.med || 0);
+      const flipProfitUnit = (curPrice > 0 && targetSell > 0) ? Math.round(targetSell * 0.95 - curPrice) : null;
+      const flipMarginPct = (flipProfitUnit != null && curPrice > 0) ? (flipProfitUnit / curPrice) * 100 : null;
+
+      let score = null;
+      if (m && curPrice > 0) {
+        let s = 40;
+        if (trend != null) s += Math.max(-18, Math.min(26, trend * 0.85));
+        const mom = medChg24 ?? chg24;
+        if (mom != null) s += Math.max(-10, Math.min(14, mom * 0.6));
+        if (vsHistPct != null) {
+          if (vsHistPct <= -8 && vsHistPct >= -40) s += 14;
+          else if (vsHistPct > -8 && vsHistPct <= 12) s += 8;
+          else if (vsHistPct > 12 && vsHistPct <= 30) s += 2;
+          else if (vsHistPct > 35) s -= 14;
+          else if (vsHistPct < -40) s += 4;
+        }
+        s += Math.min(10, Math.log10(1 + sold) * 3.2) + Math.min(6, Math.log10(1 + dailyGold / 10000) * 2.5);
+        s += daysSeen >= 5 ? 4 : (daysSeen >= 3 ? 1 : -6);
+        if (isSkewed) s -= 30;
+        score = Math.max(0, Math.min(100, Math.round(s)));
+      }
+
+      let sigKey = "none";
+      if (m) {
+        if (vsHistPct != null && vsHistPct >= 35) sigKey = "overbought";
+        else if (!isSkewed && chg24 != null && chg24 >= 8 && (medChg24 == null || medChg24 >= 5) && sold >= 5) sigKey = "momentum";
+        else if (!isSkewed && trend != null && trend >= 5 && (medChg24 == null || medChg24 >= -2) && sold >= 3) sigKey = "bullish";
+        else if (!isSkewed && vsHistPct != null && vsHistPct <= -12 && vsHistPct >= -60 && (trend == null || trend >= -15) && sold >= 3) sigKey = "dip";
+        else if (trend != null && trend <= -8 && (medChg24 == null || medChg24 <= 0)) sigKey = "bearish";
+        else sigKey = "stable";
+      }
+
+      return {
+        id, info, m, evo, sold, manual, roles,
+        curPrice, histVal, marketVal: evo.marketVal, trend, chg24, medChg24,
+        daysSeen, qty, vsHistPct, dailyGold, supplyDays,
+        isSkewed, flipProfitUnit, flipMarginPct, score, sigKey,
+        watched: state.watchlist.has(id),
+      };
+    }
+
+    function fmtSignedPctCell(v, positiveGood = true) {
+      if (v == null || Number.isNaN(v)) return '<span class="text-[var(--muted-foreground)]">—</span>';
+      const r = Math.round(v * 10) / 10;
+      const cls = r === 0 ? "text-[var(--muted-foreground)]"
+        : (r > 0 ? (positiveGood ? "text-[var(--success)]" : "text-[var(--warning)]") : (positiveGood ? "text-[var(--error)]" : "text-[var(--link)]"));
+      const arrow = r > 0 ? "▲" : (r < 0 ? "▼" : "");
+      return `<span class="font-mono tabular font-semibold ${cls}">${arrow}${r > 0 ? "+" : ""}${r}%</span>`;
+    }
+
+    function renderPrices() {
+      const pr = state.prices;
+      const qLower = pr.q.trim().toLowerCase();
+      const allAnalyzed = Object.keys(DATA.items).map(k => analyzeMarketItem(Number(k)));
+
+      // Market Pulse KPIs across clean active items
+      const cleanActive = allAnalyzed.filter(a => a.m && a.curPrice > 0 && !a.isSkewed);
+      const bullCount = cleanActive.filter(a => a.trend > 0).length;
+      const bearCount = cleanActive.filter(a => a.trend < 0).length;
+      const bullPct = (bullCount + bearCount) > 0 ? Math.round((bullCount / (bullCount + bearCount)) * 100) : 50;
+
+      const topBull = [...cleanActive]
+        .filter(a => a.sold >= 10 && a.daysSeen >= 5 && a.curPrice >= 100 && a.trend > 0)
+        .sort((a, b) => (b.score - a.score) || (b.trend - a.trend))[0];
+      const topMom = [...cleanActive]
+        .filter(a => a.sold >= 10 && a.curPrice >= 100 && a.chg24 > 0 && (a.medChg24 == null || a.medChg24 > 0))
+        .sort((a, b) => (b.chg24 - a.chg24) || (b.dailyGold - a.dailyGold))[0];
+      const topDip = [...cleanActive]
+        .filter(a => a.sold >= 10 && a.daysSeen >= 5 && a.curPrice >= 100 && a.vsHistPct <= -10 && a.vsHistPct >= -55 && (a.trend == null || a.trend >= -15) && a.flipProfitUnit > 0)
+        .sort((a, b) => (b.score - a.score) || (a.vsHistPct - b.vsHistPct))[0];
+
+      $("prices-kpis").innerHTML = `
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
+          <div class="text-xs text-[var(--muted-foreground)]">Pulso del Mercado (${HOUSE_LABELS[state.house]?.label || ''})</div>
+          <div class="flex items-baseline gap-2 mt-0.5">
+            <span class="text-base font-bold text-[var(--success)] font-mono tabular">${bullCount} ▲</span>
+            <span class="text-[var(--muted-foreground)]">/</span>
+            <span class="text-base font-bold text-[var(--error)] font-mono tabular">${bearCount} ▼</span>
+          </div>
+          <div class="w-full h-1.5 rounded-full bg-[var(--error)]/40 overflow-hidden mt-1.5">
+            <div class="h-full bg-[var(--success)]" style="width:${bullPct}%"></div>
+          </div>
+        </div>
+        <button ${topBull ? `data-open-kpi-item="${topBull.id}"` : ''} class="bg-[var(--card)] border border-[var(--border)] ${topBull ? 'hover:border-[var(--primary)] cursor-pointer' : ''} rounded-xl p-3 text-left transition">
+          <div class="text-xs text-[var(--muted-foreground)]">Top Tendencia Alcista</div>
+          <div class="text-sm font-bold truncate mt-0.5 ${topBull ? `q-${topBull.info.q}` : ''}">${topBull ? esc(topBull.info.name) : '—'}</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">${topBull ? `Tend. <b class="text-[var(--success)]">+${topBull.trend}%</b> · ${topBull.sold.toFixed(0)}/d · Score ${topBull.score}` : 'Sin datos suficientes'}</div>
+        </button>
+        <button ${topMom ? `data-open-kpi-item="${topMom.id}"` : ''} class="bg-[var(--card)] border border-[var(--border)] ${topMom ? 'hover:border-[var(--primary)] cursor-pointer' : ''} rounded-xl p-3 text-left transition">
+          <div class="text-xs text-[var(--muted-foreground)]">Top Impulso 24h</div>
+          <div class="text-sm font-bold truncate mt-0.5 ${topMom ? `q-${topMom.info.q}` : ''}">${topMom ? esc(topMom.info.name) : '—'}</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">${topMom ? `24h <b class="text-[var(--success)]">+${topMom.chg24}%</b> · ${fmtMoneyPlain(topMom.curPrice)}` : 'Sin datos suficientes'}</div>
+        </button>
+        <button ${topDip ? `data-open-kpi-item="${topDip.id}"` : ''} class="bg-[var(--card)] border border-[var(--border)] ${topDip ? 'hover:border-[var(--primary)] cursor-pointer' : ''} rounded-xl p-3 text-left transition">
+          <div class="text-xs text-[var(--muted-foreground)]">Mejor Rebote / Dip</div>
+          <div class="text-sm font-bold truncate mt-0.5 ${topDip ? `q-${topDip.info.q}` : ''}">${topDip ? esc(topDip.info.name) : '—'}</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">${topDip ? `<b class="text-[var(--warning)]">${Math.round(topDip.vsHistPct)}% hist</b> · Margen est. +${fmtMoneyPlain(topDip.flipProfitUnit)}/u` : 'Sin datos suficientes'}</div>
+        </button>
+      `;
+
+      $("m-watchlist-preset").textContent = `⭐ Seguimiento (${state.watchlist.size})`;
+      document.querySelectorAll(".m-preset").forEach(btn => {
+        const active = pr.preset === btn.dataset.mpreset;
+        btn.className = `m-preset px-2.5 py-1 rounded-lg border cursor-pointer transition ${
+          active
+            ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] font-semibold"
+            : "bg-[var(--content)] text-[var(--foreground)] border-[var(--border)] hover:border-[var(--primary)]"
+        }`;
       });
 
-      items = items.filter(it => {
-        if (flt === "reagent" && !REAGENT_IDS.has(it.id)) return false;
-        if (flt === "crafted" && !CRAFTED_IDS.has(it.id)) return false;
-        if (flt === "recipe" && !RECIPE_ITEM_IDS.has(it.id)) return false;
-        if (flt === "vendor" && !it.info.vendorSold) return false;
-        if (flt === "edited" && it.manual === undefined) return false;
+      const forceIncludeInactive = pr.filter === "vendor" || pr.filter === "edited" || pr.preset === "watchlist";
+      let items = allAnalyzed.filter(it => {
+        if (pr.filter === "reagent" && !REAGENT_IDS.has(it.id)) return false;
+        if (pr.filter === "crafted" && !CRAFTED_IDS.has(it.id)) return false;
+        if (pr.filter === "recipe" && !RECIPE_ITEM_IDS.has(it.id)) return false;
+        if (pr.filter === "vendor" && !it.info.vendorSold) return false;
+        if (pr.filter === "edited" && it.manual === undefined) return false;
+
+        if (pr.onlyActive && !forceIncludeInactive && (!it.m || !it.curPrice)) return false;
+        if (pr.hideSkewed && it.isSkewed && pr.preset !== "watchlist" && pr.filter !== "edited") return false;
+        if (pr.minSold > 0 && it.sold < pr.minSold) return false;
+        if (pr.minPrice > 0 && (it.curPrice == null || it.curPrice < pr.minPrice)) return false;
+        if (pr.signal && it.sigKey !== pr.signal) return false;
+
+        if (pr.preset === "bullish" && !(it.trend > 0 && it.sold >= 2 && it.daysSeen >= 3 && (it.medChg24 == null || it.medChg24 >= -5))) return false;
+        else if (pr.preset === "momentum" && !(it.chg24 >= 5 && (it.medChg24 == null || it.medChg24 >= 0) && it.sold >= 3)) return false;
+        else if (pr.preset === "dip" && !(it.vsHistPct != null && it.vsHistPct <= -10 && it.vsHistPct >= -60 && (it.trend == null || it.trend >= -20) && it.sold >= 2)) return false;
+        else if (pr.preset === "flip" && !(it.flipProfitUnit > 0 && it.flipMarginPct >= 15 && it.sold >= 5 && it.daysSeen >= 3 && (it.trend == null || it.trend >= -15))) return false;
+        else if (pr.preset === "overbought" && !(it.vsHistPct >= 30 && it.sold >= 2)) return false;
+        else if (pr.preset === "bearish" && !(it.trend <= -5 && it.daysSeen >= 3)) return false;
+        else if (pr.preset === "watchlist" && !it.watched) return false;
+
         if (qLower && !it.info.name.toLowerCase().includes(qLower) && String(it.id) !== qLower) return false;
         return true;
       });
 
+      const dir = pr.order === "asc" ? 1 : -1;
       items.sort((a, b) => {
-        const ae = a.manual !== undefined ? 0 : 1;
-        const be = b.manual !== undefined ? 0 : 1;
-        if (ae !== be) return ae - be;
-        return a.info.name.localeCompare(b.info.name);
+        const val = (it) => {
+          switch (pr.sort) {
+            case "name": return it.info.name;
+            case "price": return it.curPrice ?? (dir > 0 ? 1e12 : -1e12);
+            case "vsHist": return it.vsHistPct ?? (dir > 0 ? 1e12 : -1e12);
+            case "chg24": return it.chg24 ?? (dir > 0 ? 1e12 : -1e12);
+            case "trend": return it.trend ?? (dir > 0 ? 1e12 : -1e12);
+            case "goldVol": return it.dailyGold ?? 0;
+            case "score": default: return it.score ?? -1;
+          }
+        };
+        const va = val(a), vb = val(b);
+        if (typeof va === "string") return va.localeCompare(vb) * dir;
+        if (va !== vb) return (va > vb ? 1 : -1) * dir;
+        return b.dailyGold - a.dailyGold;
       });
 
-      const shown = items.slice(0, 200);
-      $("prices-tbody").innerHTML = shown.map(it => {
-        const m = it.m;
-        const vBuy = (it.info.vendorSold && it.info.buy > 0) ? Math.round(it.info.buy / it.info.bqty) : null;
+      $("m-count").textContent = `${items.length} ítems`;
+      const totalPages = Math.max(1, Math.ceil(items.length / pr.pageSize));
+      if (pr.page > totalPages) pr.page = totalPages;
+      const shown = items.slice((pr.page - 1) * pr.pageSize, pr.page * pr.pageSize);
+
+      $("prices-tbody").innerHTML = shown.length ? shown.map(it => {
+        const sig = SIGNAL_BADGES[it.sigKey] || SIGNAL_BADGES.none;
+        const scoreCls = it.score == null ? "text-[var(--muted-foreground)]"
+          : (it.score >= 70 ? "text-[var(--success)]" : (it.score >= 50 ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"));
+        const scBarCls = it.score == null ? "" : (it.score >= 70 ? "bg-[var(--success)]" : (it.score >= 50 ? "bg-[var(--primary)]" : "bg-[var(--muted-foreground)]/50"));
+
         return `
-          <tr class="hover:bg-[var(--content)]/40">
+          <tr data-row-item="${it.id}" class="hover:bg-[var(--content)]/45 transition">
             <td class="py-1.5 px-3">
               <div class="flex items-center gap-2">
+                <button data-watch="${it.id}" title="${it.watched ? 'Quitar de seguimiento' : 'Añadir a seguimiento'}" class="text-sm leading-none px-1 py-0.5 rounded hover:bg-[var(--content)] cursor-pointer ${it.watched ? 'text-[var(--warning)]' : 'text-[var(--muted-foreground)] opacity-50 hover:opacity-100'}">${it.watched ? '★' : '☆'}</button>
                 <img src="${iconSrc(it.info.ic)}" width="24" height="24" class="wow-icon cursor-pointer" data-tip-item="${it.id}" data-open-item="${it.id}" alt="" />
-                <div>
-                  <button data-open-item="${it.id}" data-tip-item="${it.id}" class="font-medium q-${it.info.q} hover:underline text-left cursor-pointer">${esc(it.info.name)}</button>
-                  <div class="text-xs text-[var(--muted-foreground)]">ID ${it.id}</div>
+                <div class="min-w-0">
+                  <button data-open-item="${it.id}" data-tip-item="${it.id}" class="font-medium q-${it.info.q} hover:underline text-left cursor-pointer truncate max-w-[220px] block">${esc(it.info.name)}</button>
+                  <div class="text-[11px] text-[var(--muted-foreground)] flex items-center gap-1.5 flex-wrap">
+                    <span>${it.roles.join(" · ") || "Ítem"}</span>
+                    ${it.isSkewed ? '<span class="px-1 rounded bg-[var(--warning)]/15 text-[var(--warning)]">Irregular</span>' : ''}
+                  </div>
                 </div>
               </div>
             </td>
-            <td class="py-1.5 px-3 text-[var(--muted-foreground)]">${it.roles.join(", ") || "—"}</td>
             <td class="py-1.5 px-3 text-right">
-              ${vBuy !== null ? `<span class="text-[var(--success)] font-medium">Compra ${fmtMoney(vBuy)}</span>` : '—'}
-              ${it.info.sell > 0 ? `<div class="text-[var(--muted-foreground)]">Venta ${fmtMoney(it.info.sell)}</div>` : ''}
+              <div>${it.curPrice != null ? fmtMoney(it.curPrice) : '—'}</div>
+              <div class="text-[11px] text-[var(--muted-foreground)]">${it.m ? `P10 ${fmtMoneyPlain(it.m[1])}` : (it.info.vendorSold ? `NPC ${fmtMoneyPlain(Math.round(it.info.buy / it.info.bqty))}` : '—')}</div>
             </td>
             <td class="py-1.5 px-3 text-right">
-              <div>${m ? fmtMoney(m[0]) : '—'}</div>
-              ${m && m[5] > 0 ? `<div class="text-[11px] text-[var(--muted-foreground)]">Hist: ${fmtMoneyPlain(m[5])}${m[8] != null && Math.abs(m[8]) >= 10 ? ` <span class="${m[8] > 0 ? 'text-[var(--warning)]' : 'text-[var(--link)]'}">(${m[8] > 0 ? '+' : ''}${Math.round(m[8])}% 24h)</span>` : ''}</div>` : ''}
+              <div>${it.histVal > 0 ? fmtMoney(it.histVal) : '—'}</div>
+              <div class="text-[11px]">${it.vsHistPct != null ? fmtSignedPctCell(it.vsHistPct, false) : '<span class="text-[var(--muted-foreground)]">—</span>'}</div>
             </td>
-            <td class="py-1.5 px-3 text-right">${m ? fmtMoney(m[1]) : '—'}</td>
-            <td class="py-1.5 px-3 text-right font-mono tabular">${m ? (m[3] || 0).toLocaleString() : '0'}</td>
+            <td class="py-1.5 px-3 text-right">
+              <div>${fmtSignedPctCell(it.chg24)}</div>
+              <div class="text-[11px] text-[var(--muted-foreground)]">${it.medChg24 != null ? `Med ${it.medChg24 > 0 ? '+' : ''}${it.medChg24}%` : '—'}</div>
+            </td>
+            <td class="py-1.5 px-3 text-right">
+              <div>${fmtSignedPctCell(it.trend)}</div>
+              <div class="text-[11px] text-[var(--muted-foreground)]">${it.daysSeen ? `${it.daysSeen}d vistos` : '—'}</div>
+            </td>
+            <td class="py-1.5 px-3 text-right">
+              <div class="inline-flex items-center gap-1.5 justify-end">
+                <span class="px-1.5 py-0.5 rounded ${sig.cls} font-medium">${sig.label}</span>
+                <span class="font-mono tabular font-bold ${scoreCls}">${it.score ?? '—'}</span>
+              </div>
+              <div class="flex items-center justify-end gap-1.5 mt-1">
+                ${it.flipMarginPct >= 15 && it.flipProfitUnit > 0 ? `<span class="text-[11px] text-[var(--success)] font-mono tabular">+${fmtMoneyPlain(it.flipProfitUnit)}/u</span>` : ''}
+                ${it.score != null ? `<div class="w-12 h-1 rounded-full bg-[var(--border)] overflow-hidden"><div class="h-full ${scBarCls}" style="width:${it.score}%"></div></div>` : ''}
+              </div>
+            </td>
+            <td class="py-1.5 px-3 text-right font-mono tabular">
+              <div>${it.sold > 0 ? `${it.sold >= 100 ? Math.round(it.sold).toLocaleString() : it.sold.toFixed(1)}/d` : '0/d'} <span class="text-[var(--muted-foreground)] font-normal">(${it.qty.toLocaleString()})</span></div>
+              <div class="text-[11px] text-[var(--muted-foreground)]">${it.dailyGold > 0 ? `${fmtMoneyPlain(it.dailyGold)}/d` : (it.supplyDays != null ? `${it.supplyDays.toFixed(1)}d stock` : '—')}</div>
+            </td>
             <td class="py-1.5 px-3 text-right">
               <div class="inline-flex items-center gap-1.5">
+                <button data-open-item="${it.id}" title="Ver gráfica de evolución y perfil completo" class="px-2 py-1 rounded bg-[var(--content)] border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer">📈</button>
                 <input data-edit-price="${it.id}" type="number" min="0" placeholder="Auto" value="${it.manual !== undefined ? it.manual : ''}"
-                  class="w-24 px-2 py-1 rounded bg-[var(--content)] border ${it.manual !== undefined ? 'border-[var(--warning)]' : 'border-[var(--border)]'} text-right font-mono tabular focus:outline-none focus:border-[var(--primary)]" />
+                  class="w-20 px-2 py-1 rounded bg-[var(--content)] border ${it.manual !== undefined ? 'border-[var(--warning)]' : 'border-[var(--border)]'} text-right font-mono tabular focus:outline-none focus:border-[var(--primary)]" />
                 ${it.manual !== undefined ? `<button data-clear-one="${it.id}" class="text-xs px-1.5 py-0.5 rounded bg-[var(--content)] border border-[var(--border)] cursor-pointer">✕</button>` : ''}
               </div>
             </td>
           </tr>
         `;
-      }).join("") + (items.length > 200 ? `<tr><td colspan="7" class="p-3 text-center text-[var(--muted-foreground)]">Mostrando 200 de ${items.length} ítems. Usa el buscador para filtrar.</td></tr>` : '');
+      }).join("") : `<tr><td colspan="8" class="p-6 text-center text-[var(--muted-foreground)]">No hay ítems que cumplan estos filtros de mercado. Prueba relajando la estrategia o ventas mínimas.</td></tr>`;
 
+      $("prices-pagination").innerHTML = `
+        <span class="text-[var(--muted-foreground)]">Página ${pr.page} de ${totalPages} (${items.length} resultados)</span>
+        <div class="flex items-center gap-1.5">
+          <button id="m-prev" ${pr.page <= 1 ? 'disabled' : ''} class="px-2.5 py-1 rounded bg-[var(--content)] border border-[var(--border)] disabled:opacity-40 cursor-pointer">Anterior</button>
+          <button id="m-next" ${pr.page >= totalPages ? 'disabled' : ''} class="px-2.5 py-1 rounded bg-[var(--content)] border border-[var(--border)] disabled:opacity-40 cursor-pointer">Siguiente</button>
+        </div>
+      `;
+      $("m-prev").onclick = () => { if (pr.page > 1) { pr.page--; renderPrices(); } };
+      $("m-next").onclick = () => { if (pr.page < totalPages) { pr.page++; renderPrices(); } };
+
+      document.querySelectorAll("th.m-sort").forEach(th => {
+        if (!th.dataset.baseLabel) th.dataset.baseLabel = th.textContent.trim();
+        const isCurrent = pr.sort === th.dataset.msort;
+        th.textContent = th.dataset.baseLabel + (isCurrent ? (pr.order === "desc" ? " ↓" : " ↑") : "");
+        th.classList.toggle("text-[var(--foreground)]", isCurrent);
+      });
+
+      $("prices-kpis").querySelectorAll("[data-open-kpi-item]").forEach(el => {
+        el.onclick = () => openItemModal(Number(el.dataset.openKpiItem));
+      });
+      $("prices-tbody").querySelectorAll("button[data-watch]").forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const wid = Number(btn.dataset.watch);
+          if (state.watchlist.has(wid)) state.watchlist.delete(wid);
+          else state.watchlist.add(wid);
+          savePersisted();
+          renderPrices();
+        };
+      });
       $("prices-tbody").querySelectorAll("input[data-edit-price]").forEach(inp => {
         inp.onchange = () => {
           const id = inp.dataset.editPrice;
@@ -1981,7 +2279,7 @@
           renderPrices();
         };
       });
-      $("prices-tbody").querySelectorAll("button[data-open-item], img[data-open-item]").forEach(el => {
+      $("prices-tbody").querySelectorAll("[data-open-item]").forEach(el => {
         el.onclick = () => openItemModal(Number(el.dataset.openItem));
       });
       $("prices-tbody").querySelectorAll("button[data-clear-one]").forEach(btn => {
@@ -2912,9 +3210,39 @@
       };
     });
 
-    // Prices controls
-    $("m-search").oninput = e => { state.prices.q = e.target.value; renderPrices(); };
-    $("m-filter").onchange = e => { state.prices.filter = e.target.value; renderPrices(); };
+    // Prices / Market Screener controls
+    $("m-search").oninput = e => { state.prices.q = e.target.value; state.prices.page = 1; renderPrices(); };
+    $("m-filter").onchange = e => { state.prices.filter = e.target.value; state.prices.page = 1; renderPrices(); };
+    $("m-signal").onchange = e => { state.prices.signal = e.target.value; state.prices.page = 1; renderPrices(); };
+    $("m-min-sold").onchange = e => { state.prices.minSold = Number(e.target.value) || 0; state.prices.page = 1; renderPrices(); };
+    $("m-min-price").onchange = e => { state.prices.minPrice = Number(e.target.value) || 0; state.prices.page = 1; renderPrices(); };
+    $("m-only-active").onchange = e => { state.prices.onlyActive = e.target.checked; state.prices.page = 1; renderPrices(); };
+    $("m-hide-skewed").onchange = e => { state.prices.hideSkewed = e.target.checked; state.prices.page = 1; renderPrices(); };
+    document.querySelectorAll(".m-preset").forEach(btn => {
+      btn.onclick = () => {
+        const p = btn.dataset.mpreset;
+        state.prices.preset = p;
+        state.prices.page = 1;
+        state.prices.signal = "";
+        $("m-signal").value = "";
+        if (p === "bullish") { state.prices.sort = "trend"; state.prices.order = "desc"; }
+        else if (p === "momentum") { state.prices.sort = "chg24"; state.prices.order = "desc"; }
+        else if (p === "dip") { state.prices.sort = "vsHist"; state.prices.order = "asc"; }
+        else if (p === "overbought") { state.prices.sort = "vsHist"; state.prices.order = "desc"; }
+        else if (p === "bearish") { state.prices.sort = "trend"; state.prices.order = "asc"; }
+        else { state.prices.sort = "score"; state.prices.order = "desc"; }
+        renderPrices();
+      };
+    });
+    document.querySelectorAll("th.m-sort").forEach(th => {
+      th.onclick = () => {
+        const s = th.dataset.msort;
+        if (state.prices.sort === s) state.prices.order = state.prices.order === "desc" ? "asc" : "desc";
+        else { state.prices.sort = s; state.prices.order = s === "name" ? "asc" : "desc"; }
+        state.prices.page = 1;
+        renderPrices();
+      };
+    });
     $("m-clear-edits").onclick = () => {
       delete state.manualPrices[state.house];
       savePersisted(); renderHeader(); renderPrices();
