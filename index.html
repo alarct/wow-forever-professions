@@ -234,6 +234,7 @@
               <span class="text-[var(--muted-foreground)]">Modo:</span>
               <select id="r-algo" class="bg-[var(--content)] text-[var(--foreground)] font-medium focus:outline-none cursor-pointer">
                 <option value="dp">Óptimo neto (con coste de receta)</option>
+                <option value="safe_margin">Margen seguro (solo AH 100% hist. &gt; 0)</option>
                 <option value="min_invest">Menor inversión necesitada (capital inicial)</option>
                 <option value="marginal">Puramente marginal (punto a punto)</option>
               </select>
@@ -390,7 +391,6 @@
           <span class="font-semibold text-[var(--foreground)] mr-1">Estrategia:</span>
           <button data-ppreset="all" class="p-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">Todas</button>
           <button data-ppreset="safe_margin" title="Crafteos cuyo margen neto ha sido > 0 en el 100% de los días del histórico de datos (mín. 5 días, P10 diario con 5% AH) y también hoy." class="p-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">🔒 Margen seguro</button>
-          <button data-ppreset="solid" title="Rentables tanto hoy como al precio histórico, con ventas reales (≥3/d)." class="p-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">🛡️ Margen sólido</button>
           <button data-ppreset="cheap_mats" title="Rentables aprovechando materiales hoy ≥10% más baratos que su histórico." class="p-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">💎 Mats en oferta</button>
           <button data-ppreset="shortage" title="Sólidas con menos de 0.75 días de stock actual en AH: oportunidad rápida sin competencia." class="p-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">⚡ Escasez stock</button>
           <button data-ppreset="healthy_up" title="Rentables y sin tendencia bajista fuerte." class="p-preset px-2.5 py-1 rounded-lg border cursor-pointer transition">📈 Sin caída</button>
@@ -1017,6 +1017,53 @@
       };
     }
 
+    function getReagentHistCost(id, useVendorMats, hk = state.house) {
+      const manual = state.manualPrices[hk]?.[String(id)];
+      if (manual !== undefined && manual !== null && manual !== "") return Number(manual);
+      const info = getItemInfo(id);
+      const vendorUnit = (info.vendorSold && info.buy > 0) ? Math.round(info.buy / info.bqty) : null;
+      const m = getMarketEntry(id, hk);
+      const histAh = (m && m[5] > 0) ? m[5] : getAhPrice(id, hk);
+      if (useVendorMats && vendorUnit !== null && (histAh === null || vendorUnit <= histAh)) return vendorUnit;
+      return histAh ?? vendorUnit ?? null;
+    }
+
+    function getRecipeHistMargin(spellId, hk = state.house) {
+      const arr = DATA.histMargin?.[hk]?.[String(spellId)];
+      if (!Array.isArray(arr) || arr.length < 3) return null;
+      return { posDays: arr[0], totalDays: arr[1], worstProfit: arr[2] };
+    }
+
+    function evalRecipeSafety(ev, vendorMats = true, ahCut = true) {
+      const hm = getRecipeHistMargin(ev.r.s);
+      let matCostHist = 0, completeHistMats = true;
+      for (const [id, qty] of ev.r.r) {
+        const hp = getReagentHistCost(id, vendorMats);
+        if (hp === null) { completeHistMats = false; break; }
+        matCostHist += hp * qty;
+      }
+      if (!completeHistMats) matCostHist = ev.matCost;
+
+      const outId = ev.r.make?.[0] || null;
+      const outQty = ev.r.make?.[1] || 1;
+      const cut = ahCut ? 0.95 : 1;
+      const mOut = outId ? getMarketEntry(outId) : null;
+      const histUnitAh = (mOut && mOut[5] > 0) ? mOut[5] : ev.craftedUnitAh;
+      const histUnitAhNet = histUnitAh != null ? Math.round(histUnitAh * cut) : 0;
+      const vendorOut = (ev.unitVendorSell || 0) * outQty;
+      const revHist = outId ? Math.max(vendorOut, histUnitAhNet * outQty) : 0;
+      const profitHist = (matCostHist != null && ev.completeOut) ? (revHist - matCostHist) : null;
+      const spotBestRev = outId ? Math.max(vendorOut, (ev.unitAhNet || 0) * outQty) : 0;
+      const spotBestProfit = (ev.matCost != null && ev.completeOut) ? (spotBestRev - ev.matCost) : null;
+      const isSafeMargin = Boolean(
+        hm && hm.totalDays >= 5 && hm.posDays === hm.totalDays && hm.worstProfit > 0
+        && spotBestProfit != null && spotBestProfit > 0
+        && (profitHist == null || profitHist > 0)
+      );
+      const safeUnitAhNet = (histUnitAhNet > 0 && ev.unitAhNet > 0) ? Math.min(ev.unitAhNet, histUnitAhNet) : (ev.unitAhNet || 0);
+      return { hm, matCostHist, revHist, profitHist, histUnitAhNet, safeUnitAhNet, isSafeMargin };
+    }
+
     // =========================================================================
     // Optimal Marginal & Saturation-Aware Leveling Route Engine (1 - 300)
     // =========================================================================
@@ -1025,6 +1072,7 @@
       const start = Math.max(1, Math.min(299, Number(cfg.from) || 1));
       const end = Math.max(start + 1, Math.min(300, Number(cfg.to) || 300));
       const isMinInvest = cfg.algo === "min_invest";
+      const isSafeMode = cfg.algo === "safe_margin";
       const userFaction = HOUSE_LABELS[state.house]?.faction || null;
 
       const candidates = [];
@@ -1049,6 +1097,11 @@
         if (r.acq === "ah_drop" && !ev.learn.known && ev.learn.cost === null) continue;
         if (cfg.maxRecipeCost > 0 && !ev.learn.known && r.acq === "ah_drop" && ev.effectiveLearnCost > cfg.maxRecipeCost) continue;
 
+        const sf = evalRecipeSafety(ev, cfg.vendorMats, true);
+        ev.histMargin = sf.hm;
+        ev.isSafeMargin = sf.isSafeMargin;
+        ev.safeUnitAhNet = sf.safeUnitAhNet;
+
         candidates.push(ev);
       }
 
@@ -1067,16 +1120,26 @@
 
       function pointRevenue(ev, expCrafts, ahUsedQty) {
         if (!ev.r.make || !ev.r.make[0] || cfg.sellMode === "none") {
-          return { rev: 0, ahUnits: 0, vendorUnits: 0, capped: false };
+          return { rev: 0, ahUnits: 0, vendorUnits: 0, capped: false, unsafeFallback: false };
         }
         const [outId, outQty] = ev.r.make;
         const produced = outQty * expCrafts;
         if (cfg.sellMode === "vendor") {
-          return { rev: produced * ev.unitVendorSell, ahUnits: 0, vendorUnits: produced, capped: false };
+          return { rev: produced * ev.unitVendorSell, ahUnits: 0, vendorUnits: produced, capped: false, unsafeFallback: false };
         }
+        if (isSafeMode && !ev.isSafeMargin) {
+          return {
+            rev: produced * ev.unitVendorSell,
+            ahUnits: 0,
+            vendorUnits: produced,
+            capped: false,
+            unsafeFallback: Boolean(ev.craftedUnitAh && ev.unitAhNet > ev.unitVendorSell && ev.soldPerDay >= cfg.minSoldForAh),
+          };
+        }
+        const effUnitAhNet = isSafeMode ? ev.safeUnitAhNet : ev.unitAhNet;
         const liquidEnough = ev.soldPerDay >= cfg.minSoldForAh;
-        if (!ev.craftedUnitAh || ev.unitAhNet <= ev.unitVendorSell || !liquidEnough) {
-          return { rev: produced * ev.unitVendorSell, ahUnits: 0, vendorUnits: produced, capped: false };
+        if (!ev.craftedUnitAh || effUnitAhNet <= ev.unitVendorSell || !liquidEnough) {
+          return { rev: produced * ev.unitVendorSell, ahUnits: 0, vendorUnits: produced, capped: false, unsafeFallback: false };
         }
         if (cfg.marketCapDays > 0) {
           const capUnits = ev.soldPerDay * cfg.marketCapDays;
@@ -1085,13 +1148,14 @@
           const ahUnits = Math.min(produced, rem);
           const vendorUnits = produced - ahUnits;
           return {
-            rev: ahUnits * ev.unitAhNet + vendorUnits * ev.unitVendorSell,
+            rev: ahUnits * effUnitAhNet + vendorUnits * ev.unitVendorSell,
             ahUnits,
             vendorUnits,
             capped: vendorUnits > 0.001,
+            unsafeFallback: false,
           };
         }
-        return { rev: produced * ev.unitAhNet, ahUnits: produced, vendorUnits: 0, capped: false };
+        return { rev: produced * effUnitAhNet, ahUnits: produced, vendorUnits: 0, capped: false, unsafeFallback: false };
       }
 
       function solveWithAllowed(allowedSet) {
@@ -1197,7 +1261,8 @@
           // Pre-filter paid candidates that can actually beat current metric in >=1 point
           const worthwhilePaid = candidates.filter(ev => {
             if (ev.effectiveLearnCost <= 0) return false;
-            const bestUnitRev = Math.max(ev.unitAhNet || 0, ev.unitVendorSell || 0) * (ev.r.make?.[1] || 1);
+            const effAh = isSafeMode ? (ev.isSafeMargin ? (ev.safeUnitAhNet || 0) : 0) : (ev.unitAhNet || 0);
+            const bestUnitRev = Math.max(effAh, ev.unitVendorSell || 0) * (ev.r.make?.[1] || 1);
             const minPossibleCraftCost = isMinInvest
               ? ev.matCost
               : (ev.matCost - (cfg.sellMode === "none" ? 0 : bestUnitRev));
@@ -1318,6 +1383,7 @@
 
       const shoppingList = [...shoppingMap.values()].sort((a, b) => b.subtotal - a.subtotal);
       learnList.sort((a, b) => a.ev.r.req - b.ev.r.req);
+      const safePoints = sol.points.filter(pt => pt.best.ev.isSafeMargin).length;
 
       return {
         feasible: true,
@@ -1335,6 +1401,7 @@
         totalInvest: sol.totalInvest,
         totalCost: sol.totalCost,
         distinctRecipes: learnList.length,
+        safePoints,
       };
     }
 
@@ -1472,7 +1539,7 @@
       const netLabel = netBalance > 0 ? "Beneficio Neto" : (netBalance < 0 ? "Pérdida Neta Total" : "Balance Neto");
       const netColor = netBalance > 0 ? "text-[var(--success)]" : (netBalance < 0 ? "text-[var(--error)]" : "text-[var(--foreground)]");
       const invHighlight = state.route.algo === "min_invest" ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)]";
-      const netHighlight = state.route.algo === "dp" ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)]";
+      const netHighlight = (state.route.algo === "dp" || state.route.algo === "safe_margin") ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)]";
 
       $("route-kpis").innerHTML = `
         <div class="bg-[var(--card)] border ${invHighlight} rounded-xl p-3">
@@ -1498,7 +1565,7 @@
         <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">Retorno por Ventas</div>
           <div class="text-base font-bold mt-0.5">${fmtMoney(res.totalRev)}</div>
-          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Con filtro liquidez/tope AH</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">${state.route.algo === "safe_margin" ? "Solo AH en 🔒 Margen seguro (conservador)" : "Con filtro liquidez/tope AH"}</div>
         </div>
         <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">Crafteos Esperados</div>
@@ -1507,7 +1574,9 @@
         </div>
       `;
 
-      $("route-status-pill").textContent = `${res.steps.length} tramos · ${Math.ceil(res.totalCrafts)} crafteos`;
+      $("route-status-pill").textContent = state.route.algo === "safe_margin"
+        ? `${res.steps.length} tramos · ${Math.ceil(res.totalCrafts)} crafteos · 🔒 ${res.safePoints}/${res.points.length} pts seguros`
+        : `${res.steps.length} tramos · ${Math.ceil(res.totalCrafts)} crafteos`;
 
       $("route-steps").innerHTML = res.steps.map((st, idx) => {
         const r = st.ev.r;
@@ -1536,6 +1605,12 @@
             liqBadge += ` <span class="text-xs text-[var(--warning)] font-medium">(Topado AH: ${Math.round(st.ahUnits)} AH + ${Math.round(st.vendorUnits)} NPC)</span>`;
           }
         }
+        let safeBadge = "";
+        if (st.ev.isSafeMargin) {
+          safeBadge = `<span class="text-xs px-1.5 py-0.5 rounded badge-safe font-medium" title="Margen neto > 0 en el 100% del histórico (${st.ev.histMargin.posDays}/${st.ev.histMargin.totalDays} días, peor día: +${fmtMoneyPlain(st.ev.histMargin.worstProfit)})">🔒 Margen seguro (${st.ev.histMargin.posDays}/${st.ev.histMargin.totalDays}d)</span>`;
+        } else if (state.route.algo === "safe_margin" && r.make?.[0] && st.ev.soldPerDay >= state.route.minSoldForAh) {
+          safeBadge = `<span class="text-xs text-[var(--muted-foreground)]">(Valorado NPC · no segura)</span>`;
+        }
 
         return `
           <div class="p-3 sm:px-4 hover:bg-[var(--content)]/40 transition">
@@ -1552,6 +1627,7 @@
                     ${r.isNew ? '<span class="text-xs px-1.5 py-0.5 rounded bg-[var(--primary)]/15 text-[var(--primary)] font-semibold">Nueva</span>' : ''}
                     <span class="text-xs px-1.5 py-0.5 rounded ${badgeCls} font-medium">${pTxt} (${cStart === cEnd ? cStart : `${cStart}→${cEnd}`})</span>
                     ${liqBadge}
+                    ${safeBadge}
                   </div>
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--muted-foreground)] mt-0.5">
                     <span>Req <b>${r.req}</b> · <b>${esc(st.ev.learn.badge)}</b>${st.ev.learn.known ? ' (Ya conocida)' : (st.ev.learn.cost ? `: ${fmtMoneyPlain(st.ev.learn.cost)}` : ' (Gratis)')}</span>
@@ -1761,44 +1837,15 @@
       });
     }
 
-    function getReagentHistCost(id, useVendorMats, hk = state.house) {
-      const manual = state.manualPrices[hk]?.[String(id)];
-      if (manual !== undefined && manual !== null && manual !== "") return Number(manual);
-      const info = getItemInfo(id);
-      const vendorUnit = (info.vendorSold && info.buy > 0) ? Math.round(info.buy / info.bqty) : null;
-      const m = getMarketEntry(id, hk);
-      const histAh = (m && m[5] > 0) ? m[5] : getAhPrice(id, hk);
-      if (useVendorMats && vendorUnit !== null && (histAh === null || vendorUnit <= histAh)) return vendorUnit;
-      return histAh ?? vendorUnit ?? null;
-    }
-
-    function getRecipeHistMargin(spellId, hk = state.house) {
-      const arr = DATA.histMargin?.[hk]?.[String(spellId)];
-      if (!Array.isArray(arr) || arr.length < 3) return null;
-      return { posDays: arr[0], totalDays: arr[1], worstProfit: arr[2] };
-    }
-
     function enrichProfitRow(ev, pf) {
-      let matCostHist = 0, completeHistMats = true;
-      for (const [id, qty] of ev.r.r) {
-        const hp = getReagentHistCost(id, pf.vendorMats);
-        if (hp === null) { completeHistMats = false; break; }
-        matCostHist += hp * qty;
-      }
-      if (!completeHistMats) matCostHist = ev.matCost;
+      const sf = evalRecipeSafety(ev, pf.vendorMats, pf.ahCut);
+      const { hm, matCostHist, revHist, profitHist, isSafeMargin } = sf;
       const matDiscountPct = (ev.matCost != null && matCostHist > 0)
         ? ((ev.matCost - matCostHist) / matCostHist) * 100
         : null;
 
       const outId = ev.r.make?.[0] || null;
-      const outQty = ev.r.make?.[1] || 1;
       const evo = outId ? getPriceEvolutionMeta(outId) : null;
-      const cut = pf.ahCut ? 0.95 : 1;
-      const vendorOut = (ev.unitVendorSell || 0) * outQty;
-      const histUnitAh = (evo?.histVal > 0) ? evo.histVal : ev.craftedUnitAh;
-      const revHistAh = histUnitAh != null ? Math.round(histUnitAh * cut) * outQty : null;
-      const revHist = outId ? Math.max(vendorOut, revHistAh ?? 0) : 0;
-      const profitHist = (matCostHist != null && ev.completeOut) ? (revHist - matCostHist) : null;
 
       const dispMatCost = pf.valMode === "historical" ? matCostHist : ev.matCost;
       let dispRev = ev.rev;
@@ -1815,18 +1862,9 @@
       const breakEvenDropPct = (dispProfit > 0 && dispRev > 0) ? Math.round((dispProfit / dispRev) * 100) : null;
       const supplyDays = (ev.soldPerDay > 0 && ev.outStock > 0) ? (ev.outStock / ev.soldPerDay) : null;
 
-      const hm = getRecipeHistMargin(ev.r.s);
-      const MIN_SAFE_DAYS = 5;
-      const isSafeMargin = Boolean(
-        hm && hm.totalDays >= MIN_SAFE_DAYS && hm.posDays === hm.totalDays && hm.worstProfit > 0
-        && ev.profit != null && ev.profit > 0
-        && (profitHist == null || profitHist > 0)
-      );
-
       const isMirage = Boolean(!isSafeMargin && ev.profit > 0 && ((profitHist != null && profitHist <= 0) || (evo?.vsHistPct != null && evo.vsHistPct >= 35)));
       const isCheapMats = Boolean(!isMirage && ev.profit > 0 && (profitHist == null || profitHist > 0) && matDiscountPct != null && matDiscountPct <= -10 && ev.soldPerDay >= 2);
       const isShortage = Boolean(!isMirage && ev.profit > 0 && (profitHist == null || profitHist > 0) && supplyDays != null && supplyDays < 0.75 && ev.soldPerDay >= 5);
-      const isSolid = Boolean(!isMirage && ev.profit > 0 && profitHist > 0 && ev.soldPerDay >= 3);
       const isDecaying = Boolean(evo?.trendPct != null && evo.trendPct <= -20);
 
       let rel = { key: "normal", label: "Normal", cls: "badge-grey", tip: "Comportamiento de precio estándar sin señales destacadas." };
@@ -1846,8 +1884,6 @@
         rel = { key: "cheap_mats", label: `💎 Mats ${Math.round(matDiscountPct)}%`, cls: "badge-green", tip: "Rentable con materiales hoy más baratos que su histórico." };
       } else if (isShortage) {
         rel = { key: "shortage", label: "⚡ Escasez", cls: "badge-yellow", tip: "Menos de 0.75 días de stock actual en AH: oportunidad rápida para vender pocas unidades." };
-      } else if (isSolid) {
-        rel = { key: "solid", label: "🛡️ Sólido", cls: "badge-green", tip: "Rentable tanto al precio actual como al histórico, con ventas diarias reales." };
       } else if (isDecaying) {
         rel = { key: "decaying", label: "📉 En caída", cls: "badge-grey", tip: "Precio en tendencia bajista prolongada; conviene no sobreproducir." };
       }
@@ -1863,7 +1899,7 @@
         dispMatCost, dispRev, dispProfit, dispRoi, dispDaily,
         safeProfit, breakEvenDropPct, supplyDays,
         histMargin: hm, isSafeMargin, extraBadges,
-        isMirage, isCheapMats, isShortage, isSolid, isDecaying,
+        isMirage, isCheapMats, isShortage, isDecaying,
         rel, watchId, watched: state.watchlist.has(watchId),
       };
     }
@@ -1915,7 +1951,6 @@
         if (pf.onlyProfit && (ev.dispProfit === null || ev.dispProfit <= 0)) continue;
 
         if (pf.preset === "safe_margin" && !ev.isSafeMargin) continue;
-        else if (pf.preset === "solid" && !ev.isSolid) continue;
         else if (pf.preset === "cheap_mats" && !ev.isCheapMats) continue;
         else if (pf.preset === "shortage" && !ev.isShortage) continue;
         else if (pf.preset === "healthy_up" && !(ev.dispProfit > 0 && !ev.isMirage && !ev.isDecaying && ev.soldPerDay >= 2)) continue;
@@ -1947,7 +1982,6 @@
       });
 
       const safeMarginCount = rows.filter(e => e.isSafeMargin).length;
-      const solidRows = rows.filter(e => e.isSolid);
       const mirageRows = rows.filter(e => e.isMirage);
       const cheapMatsCount = rows.filter(e => e.isCheapMats).length;
       const shortageCount = rows.filter(e => e.isShortage).length;
@@ -1959,15 +1993,15 @@
         <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3">
           <div class="text-xs text-[var(--muted-foreground)]">Recetas filtradas</div>
           <div class="text-base font-bold font-mono tabular mt-0.5">${rows.length}</div>
-          <div class="text-xs text-[var(--muted-foreground)] mt-0.5"><span class="text-[var(--success)] font-semibold">${safeMarginCount} seguras</span> · ${solidRows.length} sólidas · <span class="${mirageRows.length ? 'text-[var(--warning)]' : ''}">${mirageRows.length} espejismos</span></div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5"><span class="text-[var(--success)] font-semibold">${safeMarginCount} seguras</span> · <span class="${mirageRows.length ? 'text-[var(--warning)]' : ''}">${mirageRows.length} espejismos</span></div>
         </div>
         <button ${bestSolidCraft ? `data-open-pkpi="${bestSolidCraft.r.s}"` : ''} class="bg-[var(--card)] border border-[var(--border)] ${bestSolidCraft ? 'hover:border-[var(--primary)] cursor-pointer' : ''} rounded-xl p-3 text-left transition">
-          <div class="text-xs text-[var(--muted-foreground)]">Mejor beneficio sólido / craft</div>
+          <div class="text-xs text-[var(--muted-foreground)]">Mejor beneficio fiable / craft</div>
           <div class="text-base font-bold mt-0.5">${bestSolidCraft ? fmtMoney(bestSolidCraft.dispProfit, true) : '—'}</div>
           <div class="text-xs text-[var(--muted-foreground)] truncate mt-0.5">${bestSolidCraft ? `${esc(bestSolidCraft.r.n)}${bestSolidCraft.breakEvenDropPct ? ` (colchón -${bestSolidCraft.breakEvenDropPct}%)` : ''}` : '—'}</div>
         </button>
         <button ${bestSolidDaily ? `data-open-pkpi="${bestSolidDaily.r.s}"` : ''} class="bg-[var(--card)] border border-[var(--border)] ${bestSolidDaily ? 'hover:border-[var(--primary)] cursor-pointer' : ''} rounded-xl p-3 text-left transition">
-          <div class="text-xs text-[var(--muted-foreground)]">Mejor beneficio sólido / día</div>
+          <div class="text-xs text-[var(--muted-foreground)]">Mejor beneficio fiable / día</div>
           <div class="text-base font-bold mt-0.5">${bestSolidDaily && bestSolidDaily.dispDaily > 0 ? fmtMoney(bestSolidDaily.dispDaily, true) : '—'}</div>
           <div class="text-xs text-[var(--muted-foreground)] truncate mt-0.5">${bestSolidDaily && bestSolidDaily.dispDaily > 0 ? `${esc(bestSolidDaily.r.n)} (${bestSolidDaily.soldPerDay.toFixed(1)}/d)` : 'Sin datos de ventas'}</div>
         </button>
@@ -3120,7 +3154,7 @@
         const p = btn.dataset.ppreset;
         state.profit.preset = p;
         state.profit.page = 1;
-        if (["safe_margin", "solid", "cheap_mats", "shortage", "healthy_up"].includes(p)) {
+        if (["safe_margin", "cheap_mats", "shortage", "healthy_up"].includes(p)) {
           state.profit.sort = "daily";
           state.profit.order = "desc";
         } else {
